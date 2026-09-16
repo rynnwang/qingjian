@@ -26,6 +26,8 @@ impl Component for Settings {
             dictionary_status: String::new(),
             families: qingjian_render::system_fonts::families(),
             font_query: None,
+            cloudflare_account_id: String::new(),
+            cloudflare_token: String::new(),
         }
     }
 
@@ -131,6 +133,27 @@ impl Component for Settings {
                     Ok(message) => CloudStatus::Ok(message),
                     Err(message) => CloudStatus::Failed(message),
                 };
+            }
+            Message::OpenCloudflareConsole => open_with_explorer(cloud::CLOUDFLARE_CONSOLE_URL),
+            Message::CloudflareAccountId(value) => self.cloudflare_account_id = value,
+            Message::CloudflareToken(value) => self.cloudflare_token = value,
+            Message::CloudflareFill => {
+                let account_id = self.cloudflare_account_id.trim().to_owned();
+                let token = self.cloudflare_token.trim().to_owned();
+                if account_id.is_empty() || token.is_empty() {
+                    self.cloud_status =
+                        CloudStatus::Failed("请先填 Cloudflare 账号 ID 和 API 令牌".to_owned());
+                    return;
+                }
+                let base_url =
+                    format!("https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1");
+                self.save("predict", "base_url", base_url);
+                self.save("predict", "model", cloud::CLOUDFLARE_DEFAULT_MODEL);
+                self.save("predict", "api_key", token);
+                self.cloudflare_account_id.clear();
+                self.cloudflare_token.clear();
+                self.cloud_status =
+                    CloudStatus::Ok("已填入 Cloudflare Workers AI，可以点「测试连接」确认".to_owned());
             }
 
             // 快捷键页

@@ -7,8 +7,8 @@ use objc2_foundation::NSString;
 use qingjian_platform::Config;
 
 use crate::preferences::controls::{
-    button, checkbox, note, row_checkbox, row_control, row_popup, secure_field, select,
-    set_checked, text_field,
+    button, checkbox, note, plain_secure_field, plain_text_field, row_checkbox, row_control,
+    row_popup, secure_field, select, set_checked, text_field,
 };
 use crate::preferences::layout::{Layout, PAGE_PADDING, ROW_HEIGHT};
 use crate::preferences::setting::Setting;
@@ -16,6 +16,13 @@ use crate::preferences::target::PreferencesTarget;
 
 /// 云端词槽位弹出菜单的上限（配置文件里可以填更大，菜单只列到这）。
 const MAX_CLOUD_SLOTS: usize = 4;
+
+/// Cloudflare 控制台「Workers AI」页深链：登录后直接到当前账号的 Workers AI 页，
+/// 「Use REST API → Create a Workers AI API Token」一步能同时拿到账号 ID 与预置读写权限的 API 令牌。
+pub const CLOUDFLARE_CONSOLE_URL: &str = "https://dash.cloudflare.com/?to=/:account/ai/workers-ai";
+
+/// 免费额度里延迟较低的小模型，「填入以上三项」用它起步，用户仍可在「模型」框里改。
+pub const CLOUDFLARE_DEFAULT_MODEL: &str = "@cf/meta/llama-3.2-3b-instruct";
 
 pub struct CloudPage {
     /// 本地整句模型开关。
@@ -38,6 +45,18 @@ pub struct CloudPage {
 
     /// 「测试连接」按钮。
     test: Retained<NSButton>,
+
+    /// 「打开 Cloudflare 获取密钥」按钮。
+    cf_open: Retained<NSButton>,
+
+    /// Cloudflare 账号 ID 临时输入框，只读一次拼 `base_url`，不落盘、不接 `Setting`。
+    cf_account_id: Retained<NSTextField>,
+
+    /// Cloudflare API 令牌临时输入框，同上。
+    cf_token: Retained<NSSecureTextField>,
+
+    /// 「填入以上三项」按钮。
+    cf_fill: Retained<NSButton>,
 }
 
 impl CloudPage {
@@ -94,6 +113,33 @@ impl CloudPage {
             mtm,
             "用上面填的地址、模型、密钥发一条最小请求，结果显示在窗口底部。输入法进程看不到终端里的代理变量，走不通时先查这个。",
         );
+
+        let cf_open = button(
+            mtm,
+            "打开 Cloudflare 获取密钥",
+            Setting::OpenCloudflareConsole,
+            target,
+        );
+        layout.place(&cf_open, PAGE_PADDING, 220.0, ROW_HEIGHT + 4.0);
+        layout.next_row(ROW_HEIGHT + 4.0);
+        note(
+            layout,
+            mtm,
+            "没有服务商时可用 Cloudflare Workers AI 的免费额度试用：打开后在「Workers AI」页点「Use REST API」，",
+        );
+        note(
+            layout,
+            mtm,
+            "账号 ID 与预置好权限的 API 令牌会一起显示，复制粘贴到下面两项，再点「填入以上三项」。",
+        );
+        let cf_account_id = plain_text_field(mtm);
+        row_control(layout, mtm, "Cloudflare 账号 ID", &cf_account_id);
+        let cf_token = plain_secure_field(mtm);
+        row_control(layout, mtm, "Cloudflare API 令牌", &cf_token);
+        let cf_fill = button(mtm, "填入以上三项", Setting::CloudflareFill, target);
+        layout.place(&cf_fill, PAGE_PADDING, 160.0, ROW_HEIGHT + 4.0);
+        layout.next_row(ROW_HEIGHT + 4.0);
+
         Self {
             local_model,
             enabled,
@@ -102,6 +148,10 @@ impl CloudPage {
             model,
             api_key,
             test,
+            cf_open,
+            cf_account_id,
+            cf_token,
+            cf_fill,
         }
     }
 
@@ -117,6 +167,10 @@ impl CloudPage {
         self.model.setEnabled(cloud);
         self.api_key.setEnabled(cloud);
         self.test.setEnabled(cloud);
+        self.cf_open.setEnabled(cloud);
+        self.cf_account_id.setEnabled(cloud);
+        self.cf_token.setEnabled(cloud);
+        self.cf_fill.setEnabled(cloud);
         select(&self.slots, Some(config.predict.slots.min(MAX_CLOUD_SLOTS)));
         self.base_url
             .setStringValue(&NSString::from_str(&config.predict.base_url));
@@ -130,5 +184,19 @@ impl CloudPage {
         };
         self.api_key
             .setPlaceholderString(Some(&NSString::from_str(hint)));
+    }
+
+    /// 「账号 ID」「API 令牌」两个临时框现在的值，`change_setting` 处理 `CloudflareFill` 时读一次。
+    pub fn cloudflare_credentials(&self) -> (String, String) {
+        (
+            self.cf_account_id.stringValue().to_string(),
+            self.cf_token.stringValue().to_string(),
+        )
+    }
+
+    /// 填完就清空，令牌不多停留在这个次要输入框里。
+    pub fn clear_cloudflare_credentials(&self) {
+        self.cf_account_id.setStringValue(&NSString::from_str(""));
+        self.cf_token.setStringValue(&NSString::from_str(""));
     }
 }

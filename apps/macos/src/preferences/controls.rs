@@ -223,14 +223,32 @@ pub(super) fn secure_field(
     field
 }
 
+/// 不挂 `Setting` 的单行文本框：值只在别的控件动作里按需读一次，不需要 `changed:` 通知。
+pub(super) fn plain_text_field(mtm: MainThreadMarker) -> Retained<NSTextField> {
+    let field = NSTextField::initWithFrame(mtm.alloc(), NSRect::ZERO);
+    style(&field);
+    field
+}
+
+/// 同 [`plain_text_field`]，遮蔽输入（令牌一类不想被看到的值）。
+pub(super) fn plain_secure_field(mtm: MainThreadMarker) -> Retained<NSSecureTextField> {
+    let field = NSSecureTextField::initWithFrame(mtm.alloc(), NSRect::ZERO);
+    style(&field);
+    field
+}
+
 fn editable(field: &NSTextField, setting: Setting, target: &PreferencesTarget) {
+    style(field);
+    if let Some(cell) = field.cell() {
+        cell.setSendsActionOnEndEditing(true);
+    }
+    wire(field, setting, target);
+}
+
+fn style(field: &NSTextField) {
     field.setBezeled(true);
     field.setEditable(true);
     field.setSelectable(true);
     field.setDrawsBackground(true);
     field.setUsesSingleLineMode(true);
-    if let Some(cell) = field.cell() {
-        cell.setSendsActionOnEndEditing(true);
-    }
-    wire(field, setting, target);
 }

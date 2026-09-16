@@ -7,6 +7,14 @@ use crate::panel::cloud_status::CloudStatus;
 use crate::panel::controls::{field, labeled, note, page};
 use crate::panel::{Message, Settings};
 
+/// Cloudflare 控制台「Workers AI」页深链：登录后直接到当前账号的 Workers AI 页，
+/// 「Use REST API → Create a Workers AI API Token」一步能同时拿到账号 ID 与预置读写权限的 API 令牌。
+pub(crate) const CLOUDFLARE_CONSOLE_URL: &str =
+    "https://dash.cloudflare.com/?to=/:account/ai/workers-ai";
+
+/// 免费额度里延迟较低的小模型，「填入以上三项」用它起步，用户仍可在「模型」框里改。
+pub(crate) const CLOUDFLARE_DEFAULT_MODEL: &str = "@cf/meta/llama-3.2-3b-instruct";
+
 /// 后台跑一次连通性测试，轮询到有结果或被取消。
 pub(crate) fn run_test(
     config: &PredictConfig,
@@ -107,6 +115,35 @@ pub(crate) fn view(settings: &Settings, context: &mut ViewContext<Settings>) -> 
         ),
         note(
             "用上面填的地址、模型、密钥发一条最小请求。走不通时先查这里；Server 进程看不到终端里的代理变量。",
+        ),
+        labeled(
+            "",
+            Button::new()
+                .on_click(context.message(Message::OpenCloudflareConsole))
+                .content("打开 Cloudflare 获取密钥"),
+        ),
+        note(
+            "没有服务商时可用 Cloudflare Workers AI 的免费额度试用：打开后在「Workers AI」页点「Use REST API」，账号 ID 与预置好权限的 API 令牌会一起显示，复制粘贴到下面两项，再点「填入以上三项」。",
+        ),
+        field(
+            "Cloudflare 账号 ID",
+            "",
+            TextBox::new()
+                .text(settings.cloudflare_account_id.clone())
+                .on_text_changed(context.callback(Message::CloudflareAccountId)),
+        ),
+        field(
+            "Cloudflare API 令牌",
+            "",
+            PasswordBox::new()
+                .password(settings.cloudflare_token.clone())
+                .on_password_changed(context.callback(Message::CloudflareToken)),
+        ),
+        labeled(
+            "",
+            Button::new()
+                .on_click(context.message(Message::CloudflareFill))
+                .content("填入以上三项"),
         ),
     ];
     page("云服务", StackPanel::new().spacing(16.0).children(rows))

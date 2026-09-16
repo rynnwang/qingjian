@@ -40,6 +40,13 @@ pub(crate) enum Message {
     CloudSentence(bool),
     TestConnection,
     CloudTestDone(Result<String, String>),
+    OpenCloudflareConsole,
+    /// 「Cloudflare 账号 ID」临时框改了。
+    CloudflareAccountId(String),
+    /// 「Cloudflare API 令牌」临时框改了。
+    CloudflareToken(String),
+    /// 「填入以上三项」：把上面两个临时框拼成接口地址、填一个免费小模型、写密钥。
+    CloudflareFill,
 
     // 快捷键页
     PageKeys(Option<usize>),

@@ -51,6 +51,9 @@ TSV 解析、查询与生成工具把 `lue` / `nue` 统一成 `lve` / `nve`。
 ## crates/qingjian-predict
 
 - `CloudPredictor`：`Predictor` trait 的网络实现（async-openai，OpenAI 兼容接口，默认 DeepSeek），后台线程防抖 / 缓存 / 超时，`submit` / `poll` 非阻塞。
+  `base_url` / `model` / `api_key` 全部可配，任何 OpenAI 兼容接口都能接；Cloudflare Workers AI 的 `https://api.cloudflare.com/client/v4/accounts/<账号 ID>/ai/v1`
+  已验证兼容（`/v1/chat/completions`，`Authorization: Bearer <API 令牌>`），每日有免费额度，小模型（如 `llama-3.2-3b-instruct`）可当免费试用后端，见
+  [用户文档](../user/cloud/index.md#免费试用cloudflare-workers-ai)；`reasoning_effort` 是 DeepSeek 专用参数，未验证其他后端是否接受，出问题先留空排查。
   `PredictConfig` 是配置的 `[predict]` 分节。只在组句中联想，一次请求给云端词（容错校验后补进候选第一页末尾 `[predict] slots` 格，缺省 2，不预留不占位，
   前面的本地候选不挪；排布在 Core `CandidateLayout`）和整句补全（preedit 右侧，Tab）；上屏后不联想，本地历史不进请求。
 - `CloudGlossFiller`：释义兜底（Core `GlossFiller` trait，与 Predictor 分开的线程与通道，攒 1.5 秒 / 8 个词发一次，问过不再问）：
