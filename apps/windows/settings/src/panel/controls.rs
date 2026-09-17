@@ -18,10 +18,24 @@ pub(super) fn open_in_editor(path: &Path) {
     }
 }
 
-/// 资源管理器打开目录或网址。
+/// 资源管理器打开目录；`http(s)://` 开头的网址交给 `rundll32 url.dll,FileProtocolHandler`——
+/// `explorer.exe` 直接给带 `:` 的网址（如查询串里的 `:account`）会当路径解析，打开的是文件夹而不是浏览器。
 pub(super) fn open_with_explorer(target: &str) {
+    if target.starts_with("http://") || target.starts_with("https://") {
+        open_url(target);
+        return;
+    }
     if let Err(error) = std::process::Command::new("explorer").arg(target).spawn() {
         log::warn(format!("打开 {target} 失败: {error}"));
+    }
+}
+
+fn open_url(url: &str) {
+    let spawned = std::process::Command::new("rundll32")
+        .args(["url.dll,FileProtocolHandler", url])
+        .spawn();
+    if let Err(error) = spawned {
+        log::warn(format!("打开 {url} 失败: {error}"));
     }
 }
 
