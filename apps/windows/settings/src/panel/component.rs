@@ -152,8 +152,9 @@ impl Component for Settings {
                 self.save("predict", "api_key", token);
                 self.cloudflare_account_id.clear();
                 self.cloudflare_token.clear();
-                self.cloud_status =
-                    CloudStatus::Ok("已填入 Cloudflare Workers AI，可以点「测试连接」确认".to_owned());
+                self.cloud_status = CloudStatus::Ok(
+                    "已填入 Cloudflare Workers AI，可以点「测试连接」确认".to_owned(),
+                );
             }
 
             // 快捷键页

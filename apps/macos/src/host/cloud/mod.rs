@@ -49,7 +49,9 @@ impl Host {
             "model",
             crate::preferences::CLOUDFLARE_DEFAULT_MODEL,
         );
-        let key_written = self.settings.set_env_var(&config.predict.api_key_env, token);
+        let key_written = self
+            .settings
+            .set_env_var(&config.predict.api_key_env, token);
         self.preferences.clear_cloudflare_credentials();
         self.apply_config(true);
         self.preferences.set_status(if key_written {
