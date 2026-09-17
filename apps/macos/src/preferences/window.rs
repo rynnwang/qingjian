@@ -259,4 +259,14 @@ impl PreferencesWindow {
             .setTextColor(Some(&NSColor::secondaryLabelColor()));
         self.status.setStringValue(&NSString::from_str(text));
     }
+
+    /// 「云服务」页 Cloudflare 账号 ID / API 令牌两个临时框现在的值。
+    pub fn cloudflare_credentials(&self) -> (String, String) {
+        self.cloud.cloudflare_credentials()
+    }
+
+    /// 填完清空这两个临时框。
+    pub fn clear_cloudflare_credentials(&self) {
+        self.cloud.clear_cloudflare_credentials();
+    }
 }

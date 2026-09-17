@@ -44,6 +44,12 @@ pub(crate) struct Settings {
 
     /// 「字体」框里正在敲的文字；`None` 显示配置里的值。
     font_query: Option<String>,
+
+    /// 云服务页「Cloudflare 账号 ID」临时框，只读一次拼 `base_url`，不落盘。
+    cloudflare_account_id: String,
+
+    /// 云服务页「Cloudflare API 令牌」临时框，同上。
+    cloudflare_token: String,
 }
 
 impl Settings {

@@ -31,6 +31,36 @@ impl Host {
         }
     }
 
+    /// 「填入以上三项」：读「云服务」页两个临时框（Cloudflare 账号 ID / API 令牌），
+    /// 拼出接口地址、填一个免费小模型、写密钥，一次性落进 `[predict]` 并重建 Predictor。
+    pub(super) fn fill_cloudflare(&mut self, config: &qingjian_platform::Config) {
+        let (account_id, token) = self.preferences.cloudflare_credentials();
+        let account_id = account_id.trim();
+        let token = token.trim();
+        if account_id.is_empty() || token.is_empty() {
+            self.preferences
+                .set_status("请先填 Cloudflare 账号 ID 和 API 令牌，两项都在「Workers AI」页");
+            return;
+        }
+        let base_url = format!("https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1");
+        self.settings.set_value("predict", "base_url", base_url);
+        self.settings.set_value(
+            "predict",
+            "model",
+            crate::preferences::CLOUDFLARE_DEFAULT_MODEL,
+        );
+        let key_written = self
+            .settings
+            .set_env_var(&config.predict.api_key_env, token);
+        self.preferences.clear_cloudflare_credentials();
+        self.apply_config(true);
+        self.preferences.set_status(if key_written {
+            "已填入 Cloudflare Workers AI，点「测试连接」确认"
+        } else {
+            "接口地址与模型已填，密钥没能保存，请检查数据目录权限"
+        });
+    }
+
     /// 轮询定时器每 0.2 秒来一次：结果到了就显示并停表；等太久也停。
     pub fn poll_cloud_test(&mut self) {
         let Some(test) = &self.cloud_test else {

@@ -169,6 +169,13 @@ pub enum Setting {
 
     /// 「关于」页「GitHub」按钮。
     OpenRepository,
+
+    /// 「云服务」页「打开 Cloudflare 获取密钥」按钮。
+    OpenCloudflareConsole,
+
+    /// 「云服务」页「填入以上三项」按钮：把下面两个临时字段（Cloudflare 账号 ID / API 令牌）
+    /// 拼成接口地址、填一个免费小模型、写密钥，三项一次性落进 `[predict]`。
+    CloudflareFill,
 }
 
 impl Setting {
@@ -221,6 +228,8 @@ impl Setting {
             Self::Renderer => 43,
             Self::Font => 44,
             Self::SystemTextReplacements => 46,
+            Self::OpenCloudflareConsole => 48,
+            Self::CloudflareFill => 49,
             Self::Fuzzy(index) => FUZZY_TAG_BASE + index as NSInteger,
             Self::DictionaryEnabled(index) => DICTIONARY_ENABLED_TAG_BASE + index as NSInteger,
             Self::DictionaryRemove(index) => DICTIONARY_REMOVE_TAG_BASE + index as NSInteger,
@@ -276,6 +285,8 @@ impl Setting {
             39 => Self::EditPhrase,
             40 => Self::CancelPhraseEdit,
             46 => Self::SystemTextReplacements,
+            48 => Self::OpenCloudflareConsole,
+            49 => Self::CloudflareFill,
             _ if tag >= DICTIONARY_REMOVE_TAG_BASE => {
                 let index = usize::try_from(tag - DICTIONARY_REMOVE_TAG_BASE).ok()?;
                 (index < MAX_DICTIONARIES).then_some(Self::DictionaryRemove(index))?
@@ -335,6 +346,8 @@ mod tests {
             Setting::TestCloud,
             Setting::OpenWebsite,
             Setting::OpenRepository,
+            Setting::OpenCloudflareConsole,
+            Setting::CloudflareFill,
             Setting::DictionaryEnabled(0),
             Setting::DictionaryEnabled(MAX_DICTIONARIES - 1),
             Setting::DictionaryRemove(3),

@@ -421,6 +421,14 @@ impl Host {
                 open_with_system(&[crate::preferences::REPOSITORY_URL]);
                 return;
             }
+            (Setting::OpenCloudflareConsole, _) => {
+                open_with_system(&[crate::preferences::CLOUDFLARE_CONSOLE_URL]);
+                return;
+            }
+            (Setting::CloudflareFill, _) => {
+                self.fill_cloudflare(&config);
+                return;
+            }
             (Setting::OpenLogDirectory, _) => {
                 if let Some(dir) = logging::log_dir() {
                     open_with_system(&[&dir.to_string_lossy()]);
